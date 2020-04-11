@@ -32,12 +32,96 @@ SMTP_TIMEOUT
 This is an example of a configuration using [Mailgun](https://www.mailgun.com/) email service:
 
 ```
-      - SMTP_HOST=smtp.eu.mailgun.org
-      - SMTP_PORT=465
-      - SMTP_TLS=true
-      - SMTP_USERNAME=postmaster@mg.example.com
-      - SMTP_PASSWORD=secretpassword
-      - AUTH_EMAIL_FROM=notify@example.com
+    - SMTP_HOST=smtp.eu.mailgun.org
+    - SMTP_PORT=465
+    - SMTP_TLS=true
+    - SMTP_USERNAME=postmaster@mg.example.com
+    - SMTP_PASSWORD=secretpassword
+    - AUTH_EMAIL_FROM=notify@example.com
+    - NOTIFY_EMAIL_FROM=notify@example.com
+```
+
+#### API
+
+Using SMTP directly as in example above exposes sending server IP address. Alternative
+for case you don't want to expose your IP and for situations when connecting to external SMTP
+server is impossible due to firewall settings is setting up an SMTP-to-API bridge and sending
+messages trough it.
+
+Here is an example of `docker-compose.yml` configuration part spinning up a container for
+[stevenolen/mailgun-smtp-server](https://hub.docker.com/r/stevenolen/mailgun-smtp-server):
+```yaml
+    mailgun:
+        image: stevenolen/mailgun-smtp-server
+        container_name: "mailgun"
+        hostname: "mailgun"
+
+        logging:
+            driver: json-file
+            options:
+                max-size: "10m"
+                max-file: "5"
+
+        environment:
+            - MG_KEY=key-123456789
+            - MG_DOMAIN=example.com
+```
+
+To use it in remark42 environment set following two `SMTP` variables:
+
+```
+    - SMTP_HOST=mailgun
+    - SMTP_PORT=25
+```
+
+Please note that before
+[stevenolen/mailgun-smtp-server#5](https://github.com/stevenolen/mailgun-smtp-server/issues/5)
+is fixed, Europe domain names are not supported by this tool.
+
+### Sendgrid
+
+This is an example of a configuration using [SendGrid](https://sendgrid.com/) email service:
+
+```
+    - SMTP_HOST=smtp.sendgrid.net
+    - SMTP_PORT=465
+    - SMTP_TLS=true
+    - SMTP_USERNAME=apikey
+    - SMTP_PASSWORD=key-123456789
+    - AUTH_EMAIL_FROM=notify@example.com
+    - NOTIFY_EMAIL_FROM=notify@example.com
+```
+
+#### API
+
+Using SMTP directly as in example above exposes sending server IP address. Alternative
+for case you don't want to expose your IP and for situations when connecting to external SMTP
+server is impossible due to firewall settings is setting up an SMTP-to-API bridge and sending
+messages trough it.
+
+Here is an example of `docker-compose.yml` configuration part spinning up a container for
+[fgribreau/smtp-to-sendgrid-gateway](https://hub.docker.com/r/fgribreau/smtp-to-sendgrid-gateway):
+```yaml
+    sendgrid:
+        image: fgribreau/smtp-to-sendgrid-gateway
+        container_name: "sendgrid"
+        hostname: "sendgrid"
+
+        logging:
+            driver: json-file
+            options:
+                max-size: "10m"
+                max-file: "5"
+
+        environment:
+            - SENDGRID_API=key-123456789
+```
+
+To use it in remark42 environment set following two `SMTP` variables:
+
+```
+    - SMTP_HOST=sendgrid
+    - SMTP_PORT=25
 ```
 
 ### Gmail
@@ -51,6 +135,7 @@ Configuration example for Gmail:
       - SMTP_USERNAME=example.user@gmail.com
       - SMTP_PASSWORD=secretpassword
       - AUTH_EMAIL_FROM=example.user@gmail.com
+      - NOTIFY_EMAIL_FROM=example.user@gmail.com
 ```
 
 ### Amazon SES
@@ -63,7 +148,7 @@ Configuration example for [Amazon SES](https://aws.amazon.com/ses/) (us-east-1 r
       - SMTP_USERNAME=access_key_id
       - SMTP_PASSWORD=secret_access_key
       - AUTH_EMAIL_FROM=notify@example.com
-
+      - NOTIFY_EMAIL_FROM=notify@example.com
 ```
 
 A domain or an email that will be used in `AUTH_EMAIL_FROM` or `NOTIFY_EMAIL_FROM` must first be [verified](https://docs.aws.amazon.com/ses/latest/DeveloperGuide/verify-domain-procedure.html).
@@ -82,7 +167,7 @@ AUTH_EMAIL_CONTENT_TYPE
 AUTH_EMAIL_TEMPLATE
 ```
 
-After `SMTP_` variables are set, you can allow email authentication by setting these two variables:
+After you set `SMTP_` variables, you can allow email authentication by setting these two variables:
 
 ```
       - AUTH_EMAIL_ENABLE=true
@@ -106,7 +191,7 @@ ADMIN_SHARED_EMAIL
 NOTIFY_EMAIL_ADMIN
 ```
 
-After `SMTP_` variables are set, you can allow email notifications by setting these two variables:
+After you set `SMTP_` variables, you can allow email notifications by setting these two variables:
 
 ```
       - NOTIFY_TYPE=email
